@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İHA Navigasyon - Teknofest 2026</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+
+<body>
+
+    <canvas id="particleCanvas"></canvas>
+    <div id="cursor"></div>
+    <div id="cursorRing"></div>
+
+    <div class="page-wrapper">
+
+        <header>
+            <div class="header-left">
+                <span class="sys-tag">SYS_ONLINE</span>
+                <span class="sys-tag">v1.0.0</span>
+            </div>
+            <h1>İHA NAVİGASYON <span class="dim">// TEKNOFEST 2026</span></h1>
+            <div class="header-right">
+                <span class="sys-tag">A* ENGINE</span>
+                <span class="sys-tag live">● CANLI</span>
+            </div>
+        </header>
+
+        <div class="main-grid">
+
+            
+            <aside class="panel controls-panel">
+
+                <div class="panel-title">// KOORDİNAT GİRİŞİ</div>
+
+                <div class="coord-section">
+                    <div class="coord-label"><span class="dot green"></span> BAŞLANGIÇ NOKTASI</div>
+                    <div class="coord-row">
+                        <div class="coord-field"><label>X</label><input type="number" id="sx" value="5" min="0"
+                                max="50"></div>
+                        <div class="coord-field"><label>Y</label><input type="number" id="sy" value="5" min="0"
+                                max="50"></div>
+                        <div class="coord-field"><label>Z</label><input type="number" id="sz" value="5" min="0"
+                                max="50"></div>
+                    </div>
+                </div>
+
+                <div class="coord-section">
+                    <div class="coord-label"><span class="dot red"></span> HEDEF NOKTASI</div>
+                    <div class="coord-row">
+                        <div class="coord-field"><label>X</label><input type="number" id="tx" value="50" min="0"
+                                max="50"></div>
+                        <div class="coord-field"><label>Y</label><input type="number" id="ty" value="50" min="0"
+                                max="50"></div>
+                        <div class="coord-field"><label>Z</label><input type="number" id="tz" value="50" min="0"
+                                max="50"></div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+                <div class="panel-title">// ROTA MODU</div>
+
+                <div class="mode-list">
+                    <button class="mode-btn active" onclick="selectMode(1,this)">
+                        <div class="mode-icon">01</div>
+                        <div class="mode-info">
+                            <div class="mode-name">En Kısa</div>
+                            <div class="mode-desc">Risk: Yüksek · Hız: Maksimum</div>
+                        </div>
+                        <div class="mode-check">✓</div>
+                    </button>
+                    <button class="mode-btn" onclick="selectMode(2,this)">
+                        <div class="mode-icon">02</div>
+                        <div class="mode-info">
+                            <div class="mode-name">En Güvenli</div>
+                            <div class="mode-desc">Risk: Düşük · Hız: Yavaş</div>
+                        </div>
+                        <div class="mode-check">✓</div>
+                    </button>
+                    <button class="mode-btn" onclick="selectMode(3,this)">
+                        <div class="mode-icon">03</div>
+                        <div class="mode-info">
+                            <div class="mode-name">Dengeli</div>
+                            <div class="mode-desc">Risk: Orta · Hız: Optimal</div>
+                        </div>
+                        <div class="mode-check">✓</div>
+                    </button>
+                </div>
+
+                <div class="divider"></div>
+
+                <button class="run-btn" id="runBtn" onclick="runSimulation()">
+                    <span id="run-label">▶ &nbsp;SİMÜLASYONU BAŞLAT</span>
+                </button>
+
+               
+                <div class="progress-wrap" id="p-wrap">
+                    <div class="progress-header">
+                        <span id="p-msg">Hazırlanıyor...</span>
+                        <span id="p-pct">0%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="p-bar"></div>
+                    </div>
+                    <div class="steps">
+                        <div class="step" id="step-1">
+                            <div class="step-dot"></div>
+                            <div class="step-text">Ortam Kuruluyor</div>
+                        </div>
+                        <div class="step" id="step-2">
+                            <div class="step-dot"></div>
+                            <div class="step-text">Rota Hesaplanıyor</div>
+                        </div>
+                        <div class="step" id="step-3">
+                            <div class="step-dot"></div>
+                            <div class="step-text">Fizik Simülasyonu</div>
+                        </div>
+                        <div class="step" id="step-4">
+                            <div class="step-dot"></div>
+                            <div class="step-text">Animasyon Render</div>
+                        </div>
+                        <div class="step" id="step-5">
+                            <div class="step-dot"></div>
+                            <div class="step-text">Rapor Hazırlanıyor</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="status-msg"></div>
+
+                
+                <div class="divider"></div>
+                <div class="panel-title">// SANDBOX KONTROLLERİ</div>
+                <div class="controls-help">
+                    <div class="help-row"><span class="key">Sol Tık + Sürükle</span><span
+                            class="help-desc">Döndür</span></div>
+                    <div class="help-row"><span class="key">Sağ Tık + Sürükle</span><span class="help-desc">Pan</span>
+                    </div>
+                    <div class="help-row"><span class="key">Scroll</span><span class="help-desc">Zoom</span></div>
+                    <div class="help-row"><span class="key">W / S</span><span class="help-desc">İleri / Geri</span>
+                    </div>
+                    <div class="help-row"><span class="key">A / D</span><span class="help-desc">Sol / Sağ</span></div>
+                    <div class="help-row"><span class="key">Q / E</span><span class="help-desc">Aşağı / Yukarı</span>
+                    </div>
+                    <div class="help-row"><span class="key">↑ ↓ ← →</span><span class="help-desc">Kamera Döndür</span>
+                    </div>
+                    <div class="help-row"><span class="key">Space</span><span class="help-desc">Oynat / Duraklat</span>
+                    </div>
+                </div>
+            </aside>
+
+           
+            <main class="results-area">
+
+                <div class="placeholder" id="placeholder">
+                    <div class="placeholder-icon">✦</div>
+                    <div class="placeholder-title">Simülasyon Bekleniyor</div>
+                    <div class="placeholder-sub">Koordinatları girin ve başlatın</div>
+                </div>
+
+                <div class="result-grid" id="result-grid" style="display:none">
+
+                    
+                    <div class="result-card span-full">
+                        <div class="card-header">
+                            <span class="card-tag">00</span>
+                            <span class="card-title">3D GPU RENDER — SANDBOX</span>
+                            <div class="viewer-controls-header">
+                                <button class="ctrl-pill" id="btn-render" onclick="startRender()">⬡ GPU RENDER
+                                    BAŞLAT</button>
+                                <button class="ctrl-pill-fullscreen" id="btn-fullscreen" onclick="toggleFullscreen()">⛶
+                                    TAM EKRAN</button>
+                            </div>
+                        </div>
+
+                        <div class="viewer-wrap" id="viewer-wrap">
+                            <div class="viewer-idle" id="viewer-idle">
+                                <div class="viewer-idle-icon">⬡</div>
+                                <div style="color:#777; font-size:.75rem; letter-spacing:.2em;">GPU Render için butona
+                                    tıkla</div>
+                            </div>
+                            <canvas id="threeCanvas" style="display:none"></canvas>
+
+                            
+                            <div class="playback-bar" id="playback-bar" style="display:none">
+                                <div class="pb-left">
+                                    <button class="pb-btn" id="pb-rewind" title="Başa Al">⏮</button>
+                                    <button class="pb-btn" id="pb-back" title="−10 kare">⏪</button>
+                                    <button class="pb-btn" id="pb-play" title="Oynat/Duraklat">⏸</button>
+                                    <button class="pb-btn" id="pb-fwd" title="+10 kare">⏩</button>
+                                    <button class="pb-btn" id="pb-end" title="Sona Git">⏭</button>
+                                </div>
+                                <div class="pb-timeline-wrap">
+                                    <input type="range" id="pb-seek" class="pb-seek" min="0" value="0">
+                                    <div class="pb-time" id="pb-time">0 / 0</div>
+                                </div>
+                                <div class="pb-right">
+                                    <select class="pb-speed" id="pb-speed">
+                                        <option value="0.25">0.25×</option>
+                                        <option value="0.5">0.5×</option>
+                                        <option value="1" selected>1×</option>
+                                        <option value="2">2×</option>
+                                        <option value="4">4×</option>
+                                    </select>
+                                    <button class="pb-btn" id="pb-reset-cam" title="Kamerayı Sıfırla">⊙</button>
+                                </div>
+                            </div>
+
+                        
+                            <div class="viewer-hud" id="viewer-hud" style="display:none">
+                                <div class="hud-line" id="hud-drone-pos">İHA: —</div>
+                                <div class="hud-line" id="hud-frame">Kare: 0</div>
+                                <div class="hud-line" id="hud-gpu">GPU: WebGL · WASD/↑↓←→ ile gez</div>
+                            </div>
+                        </div>
+                    </div>
+
+               
+                    <div class="result-card">
+                        <div class="card-header">
+                            <span class="card-tag">01</span>
+                            <span class="card-title">2D SİMÜLASYON ANİMASYONU</span>
+                            <a id="dl-gif" class="dl-btn" download="simulasyon.gif" href="#" style="display:none">↓
+                                GIF</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="img-placeholder" id="gif-placeholder">Render bekleniyor...</div>
+                            <img id="out-gif" class="result-img" src="" alt="">
+                        </div>
+                    </div>
+
+                   
+                    <div class="result-card">
+                        <div class="card-header">
+                            <span class="card-tag">02</span>
+                            <span class="card-title">PERFORMANS RAPORU</span>
+                            <a id="dl-png" class="dl-btn" download="rapor.png" href="#" style="display:none">↓ PNG</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="img-placeholder" id="png-placeholder">Render bekleniyor...</div>
+                            <img id="out-png" class="result-img" src="" alt="">
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+
+        <footer>
+            <span>TEKNOFEST 2026 // İHA NAVİGASYON SİSTEMİ</span>
+            <span id="footer-status">● SİSTEM HAZIR</span>
+        </footer>
+
+    </div>
+
+    <script>
+
+        const pCanvas = document.getElementById('particleCanvas'), pCtx = pCanvas.getContext('2d');
+        let W = pCanvas.width = window.innerWidth, H = pCanvas.height = window.innerHeight;
+        const mouse = { x: W / 2, y: H / 2 };
+        const P_COUNT = 150, INTERACT_R = 130, MAX_GROW = 4.0, CONNECT_D = 85;
+        class Particle {
+            constructor(init = false) { this.reset(init); }
+            reset(init = false) {
+                this.x = Math.random() * W; this.y = init ? Math.random() * H : H + 10;
+                this.baseR = 0.7 + Math.random() * 1.8; this.r = this.baseR;
+                this.vx = (Math.random() - 0.5) * 0.3; this.vy = -(0.12 + Math.random() * 0.28);
+                this.alpha = 0.12 + Math.random() * 0.38; this.grow = 1;
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                const dx = this.x - mouse.x, dy = this.y - mouse.y, d = Math.hypot(dx, dy);
+                if (d < INTERACT_R) { const s = 1 - d / INTERACT_R; this.grow += (1 + (MAX_GROW - 1) * s - this.grow) * 0.13; this.x += (dx / d) * s * 0.65; this.y += (dy / d) * s * 0.65; }
+                else { this.grow += (1 - this.grow) * 0.07; }
+                this.r = this.baseR * this.grow;
+                if (this.y < -20 || this.x < -20 || this.x > W + 20) this.reset();
+            }
+            draw() {
+                if (this.r > this.baseR * 1.7) { const g = pCtx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r * 4.5); g.addColorStop(0, `rgba(255,255,255,${this.alpha})`); g.addColorStop(1, 'rgba(255,255,255,0)'); pCtx.beginPath(); pCtx.arc(this.x, this.y, this.r * 4.5, 0, Math.PI * 2); pCtx.fillStyle = g; pCtx.fill(); }
+                pCtx.beginPath(); pCtx.arc(this.x, this.y, this.r, 0, Math.PI * 2); pCtx.fillStyle = `rgba(255,255,255,${this.alpha})`; pCtx.fill();
+            }
+        }
+        const particles = Array.from({ length: P_COUNT }, () => new Particle(true));
+        function drawConn() { for (let i = 0; i < particles.length; i++)for (let j = i + 1; j < particles.length; j++) { const a = particles[i], b = particles[j], d = Math.hypot(a.x - b.x, a.y - b.y); if (d < CONNECT_D) { const base = (1 - d / CONNECT_D) * 0.1, lit = a.grow > 1.5 || b.grow > 1.5; pCtx.beginPath(); pCtx.moveTo(a.x, a.y); pCtx.lineTo(b.x, b.y); pCtx.strokeStyle = `rgba(255,255,255,${lit ? base * 3.2 : base})`; pCtx.lineWidth = lit ? 0.8 : 0.3; pCtx.stroke(); } } }
+        (function loop() { pCtx.fillStyle = 'rgba(5,5,5,0.17)'; pCtx.fillRect(0, 0, W, H); drawConn(); particles.forEach(p => { p.update(); p.draw(); }); requestAnimationFrame(loop); })();
+
+        const cursorEl = document.getElementById('cursor'), ringEl = document.getElementById('cursorRing');
+        let rx = W / 2, ry = H / 2;
+        document.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; cursorEl.style.left = e.clientX + 'px'; cursorEl.style.top = e.clientY + 'px'; });
+        (function animR() { rx += (mouse.x - rx) * 0.1; ry += (mouse.y - ry) * 0.1; ringEl.style.left = rx + 'px'; ringEl.style.top = ry + 'px'; requestAnimationFrame(animR); })();
+        window.addEventListener('resize', () => { W = pCanvas.width = window.innerWidth; H = pCanvas.height = window.innerHeight; });
+
+
+        let selectedMode = 1;
+        function selectMode(mode, btn) { selectedMode = mode; document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
+        function limitValue(val) { let n = parseInt(val); if (isNaN(n)) return 0; return Math.max(0, Math.min(50, n)); }
+        const STEPS_MAP = { 5: 1, 20: 1, 40: 2, 60: 3, 80: 4, 95: 5 };
+        function setStep(pct) { const active = STEPS_MAP[pct]; if (!active) return; for (let i = 1; i <= 5; i++) { const el = document.getElementById('step-' + i); el.classList.remove('done', 'active'); if (i < active) el.classList.add('done'); else if (i === active) el.classList.add('active'); } }
+
+        let simData = null;
+
+        async function runSimulation() {
+            document.querySelectorAll('.result-img').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.dl-btn').forEach(el => el.style.display = 'none');
+            document.getElementById('gif-placeholder').style.display = 'flex';
+            document.getElementById('png-placeholder').style.display = 'flex';
+            document.getElementById('placeholder').style.display = 'none';
+            document.getElementById('result-grid').style.display = 'grid';
+
+            const runBtn = document.getElementById('runBtn');
+            runBtn.disabled = true;
+            document.getElementById('run-label').textContent = '⏳  İŞLENİYOR...';
+
+            const pWrap = document.getElementById('p-wrap'), pBar = document.getElementById('p-bar');
+            const pPct = document.getElementById('p-pct'), pMsg = document.getElementById('p-msg');
+            const statusMsg = document.getElementById('status-msg'), footerStatus = document.getElementById('footer-status');
+
+            pWrap.style.display = 'block'; pBar.style.width = '0%'; pBar.classList.remove('error');
+            pPct.textContent = '0%'; pMsg.textContent = 'Başlatılıyor...';
+            footerStatus.textContent = '● ÇALIŞIYOR'; footerStatus.className = 'running';
+            statusMsg.textContent = '';
+            for (let i = 1; i <= 5; i++) { document.getElementById('step-' + i).classList.remove('done', 'active'); }
+
+            let sx = limitValue(document.getElementById('sx').value);
+            let sy = limitValue(document.getElementById('sy').value);
+            let sz = limitValue(document.getElementById('sz').value);
+            let tx = limitValue(document.getElementById('tx').value);
+            let ty = limitValue(document.getElementById('ty').value);
+            let tz = limitValue(document.getElementById('tz').value);
+            ['sx', 'sy', 'sz', 'tx', 'ty', 'tz'].forEach(id => document.getElementById(id).value = eval(id));
+
+            simData = { sx, sy, sz, tx, ty, tz, mode: selectedMode };
+
+            try {
+                const response = await fetch('/calculate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sx, sy, sz, tx, ty, tz, mode: selectedMode }) });
+                const reader = response.body.getReader(), dec = new TextDecoder('utf-8');
+                let buf = '';
+                while (true) {
+                    const { done, value } = await reader.read(); if (done) break;
+                    buf += dec.decode(value, { stream: true });
+                    const lines = buf.split('\n'); buf = lines.pop();
+                    for (let line of lines) {
+                        if (!line.trim()) continue;
+                        try {
+                            const msg = JSON.parse(line);
+                            if (msg.type === 'progress') { pBar.style.width = msg.value + '%'; pPct.textContent = msg.value + '%'; pMsg.textContent = msg.msg; setStep(msg.value); }
+                            else if (msg.type === 'result') {
+                                if (msg.status === 'success') {
+                                    pBar.style.width = '100%'; pPct.textContent = '100%'; pMsg.textContent = 'Tamamlandı!';
+                                    for (let i = 1; i <= 5; i++) { document.getElementById('step-' + i).classList.remove('active'); document.getElementById('step-' + i).classList.add('done'); }
+                                    footerStatus.textContent = '● TAMAMLANDI'; footerStatus.className = 'done';
+                                    showResults(msg);
+                                } else {
+                                    pBar.classList.add('error'); pMsg.textContent = 'Hata oluştu!';
+                                    statusMsg.textContent = '⚠ ' + msg.message;
+                                    footerStatus.textContent = '● HATA'; footerStatus.className = 'error';
+                                }
+                            }
+                        } catch (e) { console.log(e); }
+                    }
+                }
+            } catch (err) { console.error(err); pMsg.textContent = 'Bağlantı hatası!'; footerStatus.textContent = '● BAĞLANTI HATASI'; footerStatus.className = 'error'; }
+            finally { runBtn.disabled = false; document.getElementById('run-label').textContent = '▶  SİMÜLASYONU BAŞLAT'; }
+        }
+
+        function showResults(result) {
+            const gif = document.getElementById('out-gif');
+            gif.src = result.gif_url + '?t=' + Date.now(); gif.style.display = 'block';
+            document.getElementById('gif-placeholder').style.display = 'none';
+            document.getElementById('dl-gif').href = result.gif_url; document.getElementById('dl-gif').style.display = 'inline-block';
+            const png = document.getElementById('out-png');
+            png.src = result.png_url + '?t=' + Date.now(); png.style.display = 'block';
+            document.getElementById('png-placeholder').style.display = 'none';
+            document.getElementById('dl-png').href = result.png_url; document.getElementById('dl-png').style.display = 'inline-block';
+        }
+
+
+        function toggleFullscreen() {
+            const wrap = document.getElementById('viewer-wrap');
+            const btn = document.getElementById('btn-fullscreen');
+            if (!document.fullscreenElement) {
+                const req = wrap.requestFullscreen || wrap.webkitRequestFullscreen || wrap.mozRequestFullScreen;
+                if (req) req.call(wrap);
+                btn.textContent = '✕ ÇIKIŞ';
+            } else {
+                const ex = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen;
+                if (ex) ex.call(document);
+                btn.textContent = '⛶ TAM EKRAN';
+            }
+        }
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) document.getElementById('btn-fullscreen').textContent = '⛶ TAM EKRAN';
+            onViewerResize();
+        });
+
+
+        let threeRenderer = null, threeScene = null, threeCamera = null, threeAnimId = null;
+        let pbFrames = [], pbCurrent = 0, pbPlaying = true, pbSpeed = 1, pbInterval = 50;
+        let pbSafeInterval = 55, pbFastInterval = 25;
+        let pbSafeCurrent = 0, pbFastCurrent = 0;
+        let pbSafeLastTime = 0, pbFastLastTime = 0;
+        let safeDroneMesh = null, fastDroneMesh = null, safeTrailLine = null, fastTrailLine = null;
+        let safeTrailPositions = [], fastTrailPositions = [];
+
+
+        let orbit = {
+            ldown: false, lx: 0, ly: 0,
+            rdown: false, rx2: 0, ry2: 0,
+            theta: 0.8, phi: 0.6, radius: 95,
+            target: { x: 25, y: 25, z: 25 }
+        };
+
+
+        const keys = {};
+        let sandboxFocused = false;
+        window.addEventListener('keydown', e => {
+            keys[e.code] = true;
+            if (e.code === 'Space' && sandboxFocused) { e.preventDefault(); togglePlay(); }
+
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code) && sandboxFocused) e.preventDefault();
+        });
+        window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+        const MOVE_SPEED = 0.4, ROT_SPEED = 0.03;
+        function applyKeyboardControls() {
+            if (!threeCamera || !sandboxFocused) return;
+
+
+            const fwd = new THREE.Vector3(
+                orbit.target.x - threeCamera.position.x,
+                orbit.target.y - threeCamera.position.y,
+                orbit.target.z - threeCamera.position.z
+            ).normalize();
+            const right = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0, 1, 0)).normalize();
+
+
+            if (keys['KeyW']) { orbit.target.x += fwd.x * MOVE_SPEED; orbit.target.y += fwd.y * MOVE_SPEED; orbit.target.z += fwd.z * MOVE_SPEED; }
+            if (keys['KeyS']) { orbit.target.x -= fwd.x * MOVE_SPEED; orbit.target.y -= fwd.y * MOVE_SPEED; orbit.target.z -= fwd.z * MOVE_SPEED; }
+
+            if (keys['KeyA']) { orbit.target.x -= right.x * MOVE_SPEED; orbit.target.z -= right.z * MOVE_SPEED; }
+            if (keys['KeyD']) { orbit.target.x += right.x * MOVE_SPEED; orbit.target.z += right.z * MOVE_SPEED; }
+
+            if (keys['KeyQ']) { orbit.target.y -= MOVE_SPEED; }
+            if (keys['KeyE']) { orbit.target.y += MOVE_SPEED; }
+
+
+            if (keys['ArrowLeft']) { orbit.theta += ROT_SPEED; }
+            if (keys['ArrowRight']) { orbit.theta -= ROT_SPEED; }
+            if (keys['ArrowUp']) { orbit.phi = Math.max(0.05, orbit.phi - ROT_SPEED); }
+            if (keys['ArrowDown']) { orbit.phi = Math.min(Math.PI - 0.05, orbit.phi + ROT_SPEED); }
+
+            updateCameraOrbit();
+        }
+
+        function startRender() {
+
+            if (!simData) {
+                simData = {
+                    sx: limitValue(document.getElementById('sx').value),
+                    sy: limitValue(document.getElementById('sy').value),
+                    sz: limitValue(document.getElementById('sz').value),
+                    tx: limitValue(document.getElementById('tx').value),
+                    ty: limitValue(document.getElementById('ty').value),
+                    tz: limitValue(document.getElementById('tz').value),
+                    mode: selectedMode
+                };
+            }
+
+            document.getElementById('placeholder').style.display = 'none';
+            document.getElementById('result-grid').style.display = 'grid';
+
+            document.getElementById('viewer-idle').style.display = 'none';
+            document.getElementById('btn-render').textContent = '⟳ YENİDEN RENDER';
+
+            const wrap = document.getElementById('viewer-wrap');
+            const canvas = document.getElementById('threeCanvas');
+            canvas.style.display = 'block';
+
+
+            setTimeout(() => _initThree(wrap, canvas), 50);
+        }
+
+        function _initThree(wrap, canvas) {
+            if (threeRenderer) { threeRenderer.dispose(); cancelAnimationFrame(threeAnimId); threeAnimId = null; }
+
+            const W3 = Math.max(wrap.clientWidth || 800, 400);
+            const pbH = document.getElementById('playback-bar').offsetHeight || 48;
+            const H3 = Math.max(wrap.clientHeight - pbH, 300);
+
+
+            canvas.style.width = W3 + 'px';
+            canvas.style.height = H3 + 'px';
+
+            threeRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
+            threeRenderer.setSize(W3, H3, true);
+            threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            threeRenderer.shadowMap.enabled = true;
+            threeRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            threeRenderer.setClearColor(0xffffff, 1);
+
+            threeScene = new THREE.Scene();
+            threeScene.background = new THREE.Color(0xffffff);
+            threeScene.fog = null;
+
+            threeCamera = new THREE.PerspectiveCamera(55, W3 / H3, 0.1, 1000);
+            updateCameraOrbit();
+
+
+            threeScene.add(new THREE.AmbientLight(0xffffff, 0.85));
+            const dl = new THREE.DirectionalLight(0xffffff, 0.95);
+            dl.position.set(60, 80, 60); dl.castShadow = true; dl.shadow.mapSize.set(1024, 1024);
+            threeScene.add(dl);
+            const dl2 = new THREE.DirectionalLight(0xaaccff, 0.35);
+            dl2.position.set(-40, 20, -40); threeScene.add(dl2);
+
+
+            const grid = new THREE.GridHelper(50, 10, 0x777777, 0xbbbbbb);
+            grid.position.set(25, 0, 25); threeScene.add(grid);
+
+
+            const bm = new THREE.Mesh(
+                new THREE.BoxGeometry(50, 50, 50),
+                new THREE.MeshBasicMaterial({ color: 0x888888, wireframe: true, transparent: true, opacity: 0.1 })
+            );
+            bm.position.set(25, 25, 25); threeScene.add(bm);
+
+
+            threeScene.add(new THREE.AxesHelper(8));
+
+
+            const obstacles = [
+                { c: [15, 15, 15], r: 4, col: 0xdd2222 },
+                { c: [25, 20, 25], r: 5, col: 0xff6600 },
+                { c: [35, 30, 20], r: 4.5, col: 0xbb0044 },
+                { c: [20, 40, 30], r: 4, col: 0xdd2222 },
+                { c: [30, 25, 40], r: 5, col: 0xff6600 }
+            ];
+            obstacles.forEach(ob => {
+                const m = new THREE.Mesh(
+                    new THREE.SphereGeometry(ob.r, 32, 32),
+                    new THREE.MeshStandardMaterial({ color: ob.col, transparent: true, opacity: 0.65, roughness: 0.35, metalness: 0.1 })
+                );
+                m.position.set(...ob.c); m.castShadow = true; threeScene.add(m);
+                const wf = new THREE.Mesh(
+                    new THREE.SphereGeometry(ob.r + 0.12, 16, 16),
+                    new THREE.MeshBasicMaterial({ color: 0x111111, wireframe: true, transparent: true, opacity: 0.12 })
+                );
+                wf.position.set(...ob.c); threeScene.add(wf);
+            });
+
+
+            const { sx, sy, sz, tx, ty, tz } = simData;
+            addMarker(sx, sy, sz, 0x00bb44);
+            addMarker(tx, ty, tz, 0xcc1111);
+
+
+            safeTrailLine = createTrailLine(0x0044ee);
+            fastTrailLine = createTrailLine(0xff2200);
+            threeScene.add(safeTrailLine); threeScene.add(fastTrailLine);
+
+
+            safeDroneMesh = createDroneMesh(0x0044ee);
+            fastDroneMesh = createDroneMesh(0xff2200);
+            threeScene.add(safeDroneMesh); threeScene.add(fastDroneMesh);
+
+            buildFrames();
+
+
+            const maxFrames = pbFrames.length;
+            document.getElementById('playback-bar').style.display = 'flex';
+            document.getElementById('viewer-hud').style.display = 'block';
+            const seek = document.getElementById('pb-seek');
+            seek.max = maxFrames - 1; seek.value = 0;
+            document.getElementById('pb-time').textContent = `0 / ${maxFrames}`;
+
+            document.getElementById('pb-play').onclick = togglePlay;
+            document.getElementById('pb-rewind').onclick = () => {
+                safeIdx = 0; fastIdx = 0; safeLastMs = 0; fastLastMs = 0;
+                seek.value = 0; _applyDronePositions(0, 0);
+                if (!pbPlaying) { pbPlaying = true; document.getElementById('pb-play').textContent = '⏸'; }
+            };
+            document.getElementById('pb-back').onclick = () => {
+                safeIdx = Math.max(0, safeIdx - 10); fastIdx = Math.max(0, fastIdx - 10);
+                seek.value = Math.max(safeIdx, fastIdx); _applyDronePositions(safeIdx, fastIdx);
+            };
+            document.getElementById('pb-fwd').onclick = () => {
+                safeIdx = Math.min(pbFrames.length - 1, safeIdx + 10); fastIdx = Math.min(pbFrames.length - 1, fastIdx + 10);
+                seek.value = Math.max(safeIdx, fastIdx); _applyDronePositions(safeIdx, fastIdx);
+            };
+            document.getElementById('pb-end').onclick = () => {
+                safeIdx = pbFrames.length - 1; fastIdx = pbFrames.length - 1;
+                seek.value = safeIdx; _applyDronePositions(safeIdx, fastIdx);
+            };
+            document.getElementById('pb-speed').onchange = e => { pbSpeed = parseFloat(e.target.value); };
+            document.getElementById('pb-reset-cam').onclick = resetCamera;
+            seek.oninput = e => { const v = parseInt(e.target.value); safeIdx = v; fastIdx = v; _applyDronePositions(v, v); };
+
+            setupMouseControls(canvas);
+
+            canvas.addEventListener('mouseenter', () => { sandboxFocused = true; });
+            canvas.addEventListener('mouseleave', () => { sandboxFocused = false; orbit.ldown = false; orbit.rdown = false; });
+
+            pbPlaying = true; pbCurrent = 0; pbSafeCurrent = 0; pbFastCurrent = 0;
+            pbSafeLastTime = 0; pbFastLastTime = 0;
+            safeIdx = 0; fastIdx = 0; safeLastMs = 0; fastLastMs = 0;
+            document.getElementById('pb-play').textContent = '⏸';
+            lastFrameTime = performance.now();
+            renderLoop(performance.now());
+        }
+
+        function setupMouseControls(canvas) {
+            canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+            canvas.addEventListener('mousedown', e => {
+                if (e.button === 0) { orbit.ldown = true; orbit.lx = e.clientX; orbit.ly = e.clientY; }
+                if (e.button === 2 || e.button === 1) { orbit.rdown = true; orbit.rx2 = e.clientX; orbit.ry2 = e.clientY; if (e.button === 1) e.preventDefault(); }
+            });
+
+            window.addEventListener('mousemove', e => {
+                if (orbit.ldown) {
+
+                    const dx = e.clientX - orbit.lx, dy = e.clientY - orbit.ly;
+                    orbit.theta -= dx * 0.006;
+                    orbit.phi = Math.max(0.05, Math.min(Math.PI - 0.05, orbit.phi + dy * 0.006));
+                    orbit.lx = e.clientX; orbit.ly = e.clientY;
+                    updateCameraOrbit();
+                }
+                if (orbit.rdown) {
+
+                    const dx = e.clientX - orbit.rx2, dy = e.clientY - orbit.ry2;
+                    if (threeCamera) {
+                        const right = new THREE.Vector3().crossVectors(
+                            new THREE.Vector3(orbit.target.x - threeCamera.position.x, orbit.target.y - threeCamera.position.y, orbit.target.z - threeCamera.position.z).normalize(),
+                            new THREE.Vector3(0, 1, 0)
+                        ).normalize();
+                        const ps = orbit.radius * 0.001;
+                        orbit.target.x -= right.x * dx * ps;
+                        orbit.target.z -= right.z * dx * ps;
+                        orbit.target.y += dy * ps;
+                    }
+                    orbit.rx2 = e.clientX; orbit.ry2 = e.clientY;
+                    updateCameraOrbit();
+                }
+            });
+
+            window.addEventListener('mouseup', () => { orbit.ldown = false; orbit.rdown = false; });
+
+            canvas.addEventListener('wheel', e => {
+                e.preventDefault();
+                orbit.radius = Math.max(5, Math.min(250, orbit.radius + e.deltaY * (e.ctrlKey ? 0.03 : 0.08)));
+                updateCameraOrbit();
+            }, { passive: false });
+        }
+
+        function onViewerResize() {
+            if (!threeRenderer || !threeCamera) return;
+            const wrap = document.getElementById('viewer-wrap');
+            const W3 = Math.max(wrap.clientWidth || 800, 400);
+            const fullH = document.fullscreenElement ? window.innerHeight : wrap.clientHeight;
+            const H3 = Math.max(fullH - 48, 300);
+            threeRenderer.setSize(W3, H3, true);
+            threeCamera.aspect = W3 / H3;
+            threeCamera.updateProjectionMatrix();
+        }
+        window.addEventListener('resize', onViewerResize);
+
+        function addMarker(x, y, z, color) {
+            const m = new THREE.Mesh(
+                new THREE.SphereGeometry(1.0, 16, 16),
+                new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.35, roughness: 0.2, metalness: 0.5 })
+            );
+            m.position.set(x, y, z); threeScene.add(m);
+            const lg = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x, 0, z), new THREE.Vector3(x, y, z)]);
+            threeScene.add(new THREE.Line(lg, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.35 })));
+        }
+
+        function createTrailLine(color) {
+            const geo = new THREE.BufferGeometry();
+            const pos = new Float32Array(3000 * 3);
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            geo.setDrawRange(0, 0);
+            return new THREE.Line(geo, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9, linewidth: 3 }));
+        }
+
+        function createDroneMesh(color) {
+            const g = new THREE.Group();
+            g.add(new THREE.Mesh(
+                new THREE.BoxGeometry(1.2, 0.4, 1.2),
+                new THREE.MeshStandardMaterial({ color, roughness: 0.3, metalness: 0.7, emissive: color, emissiveIntensity: 0.25 })
+            ));
+            [[-0.8, 0.25, -0.8], [0.8, 0.25, -0.8], [-0.8, 0.25, 0.8], [0.8, 0.25, 0.8]].forEach(([px, py, pz]) => {
+                const p = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.07, 12), new THREE.MeshStandardMaterial({ color: 0x444444, transparent: true, opacity: 0.7 }));
+                p.position.set(px, py, pz); g.add(p);
+                const aLen = Math.sqrt(px * px + pz * pz);
+                const a = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, aLen, 6), new THREE.MeshStandardMaterial({ color: 0x333333 }));
+                a.position.set(px / 2, 0.1, pz / 2); a.lookAt(new THREE.Vector3(px, 0.1, pz)); a.rotateX(Math.PI / 2); g.add(a);
+            });
+            const pl = new THREE.PointLight(color, 1.2, 12); g.add(pl);
+            return g;
+        }
+
+
+
+
+        const OBSTACLES_DEF = [
+            { cx: 15, cy: 15, cz: 15, r: 4 },
+            { cx: 25, cy: 20, cz: 25, r: 5 },
+            { cx: 35, cy: 30, cz: 20, r: 4.5 },
+            { cx: 20, cy: 40, cz: 30, r: 4 },
+            { cx: 30, cy: 25, cz: 40, r: 5 }
+        ];
+        const WORLD = 50;
+
+
+        function positionBlocked(x, y, z, safetyMargin) {
+            if (x < 0 || y < 0 || z < 0 || x > WORLD || y > WORLD || z > WORLD) return true;
+            for (const ob of OBSTACLES_DEF) {
+                const d = Math.sqrt((x - ob.cx) ** 2 + (y - ob.cy) ** 2 + (z - ob.cz) ** 2);
+                if (d <= (ob.r + safetyMargin)) return true;
+            }
+            return false;
+        }
+
+
+        function dangerScore(x, y, z) {
+            let max = 0;
+            for (const ob of OBSTACLES_DEF) {
+                const d = Math.sqrt((x - ob.cx) ** 2 + (y - ob.cy) ** 2 + (z - ob.cz) ** 2);
+                const surf = Math.max(0.1, d - ob.r);
+                if (surf < 10) max = Math.max(max, (10 / surf) ** 2);
+            }
+            return max;
+        }
+
+
+        function astar3D(start, goal, safetyMargin, safetyFactor, step = 2) {
+            const s = [Math.round(start[0] / step) * step, Math.round(start[1] / step) * step, Math.round(start[2] / step) * step];
+            const g = [Math.round(goal[0] / step) * step, Math.round(goal[1] / step) * step, Math.round(goal[2] / step) * step];
+            const key = (x, y, z) => `${x},${y},${z}`;
+            const heur = (x, y, z) => Math.sqrt((x - g[0]) ** 2 + (y - g[1]) ** 2 + (z - g[2]) ** 2);
+
+
+            const dirs = [];
+            for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (let dz = -1; dz <= 1; dz++) {
+                if (dx === 0 && dy === 0 && dz === 0) continue;
+                dirs.push([dx * step, dy * step, dz * step]);
+            }
+
+            const open = [[heur(...s), 0, s, null]];
+            const gScore = { [key(...s)]: 0 };
+            const parent = { [key(...s)]: null };
+            const closed = new Set();
+            let iters = 0;
+
+            while (open.length && iters++ < 15000) {
+
+                open.sort((a, b) => a[0] - b[0]);
+                const [, cg, cp] = open.shift();
+                const ck = key(...cp);
+                if (closed.has(ck)) continue;
+                closed.add(ck);
+
+                if (Math.abs(cp[0] - g[0]) <= step && Math.abs(cp[1] - g[1]) <= step && Math.abs(cp[2] - g[2]) <= step) {
+
+                    const path = [goal];
+                    let cur = ck;
+                    while (parent[cur] !== null) {
+                        const [px, py, pz] = parent[cur].split(',').map(Number);
+                        path.push([px, py, pz]);
+                        cur = parent[cur];
+                    }
+                    path.reverse();
+                    return path;
+                }
+
+                for (const [dx, dy, dz] of dirs) {
+                    const nx = cp[0] + dx, ny = cp[1] + dy, nz = cp[2] + dz;
+                    if (positionBlocked(nx, ny, nz, safetyMargin)) continue;
+                    const nk = key(nx, ny, nz);
+                    if (closed.has(nk)) continue;
+                    const moveCost = Math.sqrt(dx ** 2 + dy ** 2 + dz ** 2);
+                    const danger = dangerScore(nx, ny, nz) * safetyFactor;
+                    const ng = cg + moveCost + danger;
+                    if (gScore[nk] === undefined || ng < gScore[nk]) {
+                        gScore[nk] = ng;
+                        parent[nk] = ck;
+                        open.push([ng + heur(nx, ny, nz), ng, [nx, ny, nz], ck]);
+                    }
+                }
+            }
+
+            return [start, goal];
+        }
+
+
+        function smoothPath(path, safetyMargin) {
+            if (path.length <= 2) return path;
+            const out = [path[0]];
+            let i = 0;
+            while (i < path.length - 1) {
+                let far = i + 1;
+                for (let j = path.length - 1; j > i + 1; j--) {
+                    if (lineOfSight(path[i], path[j], safetyMargin)) { far = j; break; }
+                }
+                out.push(path[far]); i = far;
+            }
+            return out;
+        }
+
+        function lineOfSight(a, b, margin) {
+            const steps = Math.ceil(Math.sqrt((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2 + (b[2] - a[2]) ** 2) / 1.5) + 1;
+            for (let i = 1; i < steps; i++) {
+                const t = i / steps;
+                const x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t, z = a[2] + (b[2] - a[2]) * t;
+                if (positionBlocked(x, y, z, margin)) return false;
+            }
+            return true;
+        }
+
+
+        function pathToPositions(path, totalFrames) {
+            if (!path || path.length < 2) return [];
+
+            const segLens = [];
+            let totalLen = 0;
+            for (let i = 0; i < path.length - 1; i++) {
+                const l = Math.sqrt((path[i + 1][0] - path[i][0]) ** 2 + (path[i + 1][1] - path[i][1]) ** 2 + (path[i + 1][2] - path[i][2]) ** 2);
+                segLens.push(l); totalLen += l;
+            }
+            const pts = [];
+            for (let i = 0; i < path.length - 1; i++) {
+                const segFrames = Math.max(2, Math.round((segLens[i] / totalLen) * totalFrames));
+                for (let f = 0; f < segFrames; f++) {
+                    const t = f / segFrames;
+
+                    const et = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+                    pts.push([
+                        path[i][0] + (path[i + 1][0] - path[i][0]) * et,
+                        path[i][1] + (path[i + 1][1] - path[i][1]) * et,
+                        path[i][2] + (path[i + 1][2] - path[i][2]) * et
+                    ]);
+                }
+            }
+            pts.push(path[path.length - 1]);
+            return pts;
+        }
+
+        function buildFrames() {
+            const { sx, sy, sz, tx, ty, tz, mode } = simData;
+            const start = [sx, sy, sz], goal = [tx, ty, tz];
+
+
+            let safeConfig, fastConfig, frameCount;
+            if (mode === 1) {
+
+                safeConfig = { safetyMargin: 0.3, safetyFactor: 0.5, step: 2, frames: 500, speed: 1.0 };
+                fastConfig = { safetyMargin: 0.1, safetyFactor: 0.0, step: 2, frames: 300, speed: 2.2 };
+                frameCount = 500;
+            } else if (mode === 2) {
+
+                safeConfig = { safetyMargin: 3.5, safetyFactor: 25.0, step: 2, frames: 800, speed: 0.5 };
+                fastConfig = { safetyMargin: 2.0, safetyFactor: 10.0, step: 2, frames: 700, speed: 0.7 };
+                frameCount = 800;
+            } else {
+
+                safeConfig = { safetyMargin: 2.0, safetyFactor: 12.0, step: 2, frames: 650, speed: 0.75 };
+                fastConfig = { safetyMargin: 0.8, safetyFactor: 2.0, step: 2, frames: 500, speed: 1.3 };
+                frameCount = 700;
+            }
+
+
+            const rawSafe = astar3D(start, goal, safeConfig.safetyMargin, safeConfig.safetyFactor, safeConfig.step);
+            const rawFast = astar3D(start, goal, fastConfig.safetyMargin, fastConfig.safetyFactor, fastConfig.step);
+
+
+            const smoothSafe = smoothPath(rawSafe, safeConfig.safetyMargin);
+            const smoothFast = smoothPath(rawFast, fastConfig.safetyMargin);
+
+
+            const si = pathToPositions(smoothSafe, safeConfig.frames);
+            const fi = pathToPositions(smoothFast, fastConfig.frames);
+
+
+            document.getElementById('hud-gpu').textContent =
+                mode === 1 ? 'MOD: EN KISA — Hızlı·Riskli' :
+                    mode === 2 ? 'MOD: EN GÜVENLİ — Yavaş·Güvenli' :
+                        'MOD: DENGELİ — Hibrit';
+
+
+            pbSafeInterval = Math.round(55 / safeConfig.speed);
+            pbFastInterval = Math.round(55 / fastConfig.speed);
+
+            const ml = Math.max(si.length, fi.length);
+            pbFrames = [];
+            for (let i = 0; i < ml; i++) pbFrames.push({
+                safe: si[Math.min(i, si.length - 1)],
+                fast: fi[Math.min(i, fi.length - 1)]
+            });
+            safeTrailPositions = []; fastTrailPositions = [];
+
+            console.log(`A* tamamlandı | Mod:${mode} | Güvenli:${smoothSafe.length}wp→${si.length}fr | Hızlı:${smoothFast.length}wp→${fi.length}fr`);
+        }
+
+        function updateCameraOrbit() {
+            if (!threeCamera) return;
+            const { theta, phi, radius, target } = orbit;
+            threeCamera.position.set(
+                target.x + radius * Math.sin(phi) * Math.sin(theta),
+                target.y + radius * Math.cos(phi),
+                target.z + radius * Math.sin(phi) * Math.cos(theta)
+            );
+            threeCamera.lookAt(target.x, target.y, target.z);
+        }
+
+        function resetCamera() { orbit.theta = 0.8; orbit.phi = 0.6; orbit.radius = 95; orbit.target = { x: 25, y: 25, z: 25 }; updateCameraOrbit(); }
+
+
+        function updateFrame(idx) {
+            if (!pbFrames.length) return;
+            safeIdx = idx; fastIdx = idx;
+            _applyDronePositions(idx, idx);
+        }
+
+        function _applyDronePositions(si, fi) {
+            if (!pbFrames.length) return;
+            const sf = pbFrames[Math.min(si, pbFrames.length - 1)];
+            const ff = pbFrames[Math.min(fi, pbFrames.length - 1)];
+            if (safeDroneMesh) safeDroneMesh.position.set(...sf.safe);
+            if (fastDroneMesh) fastDroneMesh.position.set(...ff.fast);
+            safeTrailPositions = pbFrames.slice(0, si + 1).map(fr => fr.safe);
+            fastTrailPositions = pbFrames.slice(0, fi + 1).map(fr => fr.fast);
+            if (safeTrailLine) updateTrail(safeTrailLine, safeTrailPositions);
+            if (fastTrailLine) updateTrail(fastTrailLine, fastTrailPositions);
+            const pk = Math.max(si, fi);
+            document.getElementById('hud-drone-pos').textContent =
+                `🔵(${sf.safe[0].toFixed(1)},${sf.safe[1].toFixed(1)},${sf.safe[2].toFixed(1)}) 🔴(${ff.fast[0].toFixed(1)},${ff.fast[1].toFixed(1)},${ff.fast[2].toFixed(1)})`;
+            document.getElementById('hud-frame').textContent = `Kare: ${pk} / ${pbFrames.length}`;
+            document.getElementById('pb-seek').value = pk;
+            document.getElementById('pb-time').textContent = `${pk} / ${pbFrames.length}`;
+        }
+
+        function updateTrail(line, positions) {
+            if (!positions.length) return;
+            const attr = line.geometry.attributes.position;
+            const len = Math.min(positions.length, attr.count);
+            for (let i = 0; i < len; i++) attr.setXYZ(i, positions[i][0], positions[i][1], positions[i][2]);
+            attr.needsUpdate = true; line.geometry.setDrawRange(0, len);
+        }
+
+        function togglePlay() {
+
+            if (!pbPlaying && safeIdx >= (pbFrames.length - 1) && fastIdx >= (pbFrames.length - 1)) {
+                safeIdx = 0; fastIdx = 0; safeLastMs = 0; fastLastMs = 0;
+            }
+            pbPlaying = !pbPlaying;
+            document.getElementById('pb-play').textContent = pbPlaying ? '⏸' : '▶';
+        }
+
+
+        let safeIdx = 0, fastIdx = 0, safeLastMs = 0, fastLastMs = 0;
+        let lastFrameTime = 0;
+
+        function tickDrones(now) {
+            if (!pbFrames.length) return;
+            const maxIdx = pbFrames.length - 1;
+
+
+            const safeMs = pbSafeInterval / pbSpeed;
+            if (now - safeLastMs >= safeMs && safeIdx < maxIdx) {
+                safeLastMs = now; safeIdx++;
+            }
+
+            const fastMs = pbFastInterval / pbSpeed;
+            if (now - fastLastMs >= fastMs && fastIdx < maxIdx) {
+                fastLastMs = now; fastIdx++;
+            }
+
+
+            if (safeDroneMesh) safeDroneMesh.children.forEach((c, i) => { if (i > 0 && i < 5) c.rotation.y += 0.10; });
+            if (fastDroneMesh) fastDroneMesh.children.forEach((c, i) => { if (i > 0 && i < 5) c.rotation.y += 0.38; });
+
+            _applyDronePositions(safeIdx, fastIdx);
+
+
+            if (safeIdx >= maxIdx && fastIdx >= maxIdx) {
+                pbPlaying = false;
+                document.getElementById('pb-play').textContent = '▶';
+            }
+        }
+
+        function renderLoop(now) {
+            threeAnimId = requestAnimationFrame(renderLoop);
+            applyKeyboardControls();
+            if (pbPlaying && pbFrames.length) tickDrones(now);
+            threeRenderer.render(threeScene, threeCamera);
+        }
+    </script>
+</body>
+
+</html>
