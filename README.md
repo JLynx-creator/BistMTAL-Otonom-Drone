@@ -1,5 +1,4 @@
 # ✈️ UAV Navigation System — Teknofest 2026
-# ✈️ İHA Navigasyon Sistemi — Teknofest 2026
 
 **Developers / Geliştiriciler:** Yağız Günay / Efe Çelik
 
